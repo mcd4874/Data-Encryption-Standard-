@@ -6,13 +6,14 @@ public class KeySchedule {
     /* Initialize lookup tables for PC_1 and PC_2 */
     //private static final int[][] PC_1 = null;
     //private static final int[][] PC_2 = null;
-    private static final int[] PC_1 = {57,49,41,33,25,17,9,1,
-                                        58,50,42,34,26,18,10,2,
-                                        59,51,43,35,27,19,11,3,
-                                        60,52,44,36,63,55,47,39,
-                                        31,23,15,7,62,54,46,38,
-                                        30,22,14,6,61,53,45,37,
-                                        29,21,13,5,28,20,12,4};
+    private static final int[] PC_1 = {57,49,41,33,25,17,9,
+                                        1, 58,50,42,34,26,18,
+                                        10,2,59,51,43,35,27,
+                                        19,11,3,60,52,44,36,
+                                        63,55,47,39,31,23,15,
+                                        7,62,54,46,38,30,22,
+                                        14,6,61,53,45,37,29,
+                                        21,13,5,28,20,12,4};
     private static final int[] PC_2 = {14,17,11,24,1,5,3,28,
                                         15,6,21,10,23,19,12,4,
                                         26,8,16,7,27,20,13,2,
@@ -25,10 +26,9 @@ public class KeySchedule {
      @return 56-bit string to be fed to 16 rounds of transformation
      */
     protected static String pc_1(String key){
-        String[] array_key = key.split("");
         String PC_key = "";
-        for(int i=0; i<PC_1.length; i++) {
-            PC_key += array_key[PC_1[i] - 1];
+        for(int i=0; i<56; i++) {
+            PC_key += key.charAt(PC_1[i]-1);
         }
         return PC_key;
     }
@@ -46,21 +46,74 @@ public class KeySchedule {
         }
         return PC_key;
     }
+
+
+
+    protected static String[] encryption_rotation (String current_key)
+    {
+        String[] subkeys = new String[16];
+        String current_C = current_key.substring(0,28);
+        String current_D = current_key.substring(28,56);
+        for(int round = 1; round < 17; round++)
+        {
+            //the two halves are rotated left by one bit
+            if ( round == 1 || round == 2 || round ==9 || round ==16)
+            {
+                String after_shift_C = ""+current_C.substring(1,28)+current_C.substring(0,1);
+                String after_shift_D = ""+current_D.substring(1,28)+current_D.substring(0,1);
+                String new_string_key = ""+after_shift_C+after_shift_D;
+                String new_key = pc_2(new_string_key);
+                subkeys[round-1]= new_key;
+                current_C = after_shift_C;
+                current_D = after_shift_D;
+            }
+            //the two halves are rotated left by two bit
+            else
+            {
+                String after_shift_C = ""+current_C.substring(2,28)+current_C.substring(0,2);
+                String after_shift_D = ""+current_D.substring(2,28)+current_D.substring(0,2);
+                String new_string_key = ""+after_shift_C+after_shift_D;
+                String new_key = pc_2(new_string_key);
+                subkeys[round-1]= new_key;
+                current_C = after_shift_C;
+                current_D = after_shift_D;
+            }
+        }
+        return subkeys;
+    }
+
+
     /**
+     * Implement 16 rounds of transformation
+     In each round, two halves are left-shifted by one/two bits
+     and a subkey is generated
      The key schedule for encryption generates 16 subkeys from main key
      @param key main key of 64 bits
      @return an array of 16 subkeys
      */
     public static String[] generateSubkeysForEncryption(String key){
-        System.out.print("get here 1");
         String[] subkeys = new String[16];
         String current_key = pc_1(key);
+        subkeys = encryption_rotation(current_key);
+        return subkeys;
+    }
+    /**
+     The key schedule for encryption generates 16 subkeys from main key
+     Do NOT call the generateSubkeysForEncryption method here
+     @param key main key of 64 bits
+     @return an array of 16 subkeys
+     */
+    public static String[] generateSubkeysForDecryption(String key){
+
+        String[] subkeys = new String[16];
+        String current_key = pc_1(key);
+        subkeys[0] = pc_2(current_key);
         String current_C = current_key.substring(0,28);
         String current_D = current_key.substring(28,56);
-        for(int round = 1; round < 17; round++)
+        for(int round = 2; round < 17; round++)
         {
-            //the two halves are rotated left by two bit
-            if ( round == 1 || round == 2 || round ==9 || round ==16)
+            //the two halves are rotated right by one bit
+            if (round == 2 || round ==9 || round ==16)
             {
                 String after_shift_C = ""+current_C.substring(27,28)+current_C.substring(0,27);
                 String after_shift_D = ""+current_D.substring(27,28)+current_D.substring(0,27);
@@ -70,7 +123,7 @@ public class KeySchedule {
                 current_C = after_shift_C;
                 current_D = after_shift_D;
             }
-            //the two halves are rotated left by one bit
+            //the two halves are rotated right by two bit
             else
             {
                 String after_shift_C = ""+current_C.substring(26,28)+current_C.substring(0,26);
@@ -89,15 +142,6 @@ public class KeySchedule {
       */
 
         return subkeys;
-    }
-    /**
-     The key schedule for encryption generates 16 subkeys from main key
-     Do NOT call the generateSubkeysForEncryption method here
-     @param key main key of 64 bits
-     @return an array of 16 subkeys
-     */
-    public static String[] generateSubkeysForDecryption(String key){
-        return null;
     }
 
 }

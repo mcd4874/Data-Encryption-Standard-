@@ -22,7 +22,6 @@ public class DES {
         return finalOutput;
 
         //return x;
-
     }
     /**
      DES decryption algorithm
@@ -31,8 +30,12 @@ public class DES {
      @return 64-bit decrypted text
      */
     public static String decrypt(String y, String key){
-        //Complete this method
-        return y;
+        String[] subkeys = KeySchedule.generateSubkeysForDecryption(key);
+        String firstOutput = IP.permute(y);
+        String FeistelOutput = FeistelNetwork.iterate(firstOutput,subkeys);
+      /* Uncomment the following two lines and comment out return x */
+        String finalOutput = IPinverse.permute(FeistelOutput);
+        return finalOutput;
     }
 
 }

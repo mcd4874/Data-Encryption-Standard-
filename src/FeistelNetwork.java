@@ -76,7 +76,7 @@ public class FeistelNetwork {
             22, 11, 4,  25
     };
 
-    public static String xor (String first_input, String second_input){
+    protected static String xor (String first_input, String second_input){
         StringBuilder result = new StringBuilder();
             for(int i = 0; i < first_input.length(); i++) {
                 result.append((first_input.charAt(i) ^ second_input.charAt(i)));
@@ -85,16 +85,21 @@ public class FeistelNetwork {
 
     }
 
-    public static String toBinary(int n) {
-        if (n == 0) {
-            return "0";
-        }
+    protected static String toBinary(int n) {
         String binary = "";
         while (n > 0) {
             int rem = n % 2;
             binary = rem + binary;
             n = n / 2;
         }
+        if (binary.length()!= 4){
+            String new_binary = "";
+            for (int i=0; i<(4-binary.length()); i++)
+                new_binary+="0";
+            new_binary+=binary;
+            return new_binary;
+        }
+
         return binary;
     }
 
@@ -125,23 +130,20 @@ public class FeistelNetwork {
         return result;
     }
 
-    private static String permutation(String input) {
+    protected static String permutation(String input) {
         String result ="";
         for (int i=0; i<input.length(); i++)
-            result+= input.charAt(Permutation[i]);
+            result+= input.charAt(Permutation[i]-1);
         return result;
     }
 
-    private static String f_function(String right_input, String key){
+    protected static String f_function(String right_input, String key){
         //expansion
         String right_input_after_expansion = "";
         for (int i =0; i<Expansion.length; i++)
             right_input_after_expansion += right_input.charAt(Expansion[i]-1);
         //perform xor
-        StringBuilder sb = new StringBuilder();
-        for(int i = 0; i < key.length(); i++)
-            sb.append((right_input_after_expansion.charAt(i) ^ key.charAt(i)));
-        String result_after_xor = sb.toString();
+        String result_after_xor = xor(right_input_after_expansion,key);
         //substitution into s-box
         String result_after_substitution = substitution(result_after_xor);
         //permutate the string after substitution
@@ -164,9 +166,9 @@ public class FeistelNetwork {
             String f_function_result = f_function(current_right, subkeys[round]);
             String temp_left = current_left;
             current_left = current_right;
-            current_right = xor(temp_left, f_function_result);
-        }
-        String result = ""+current_left+current_right;
+            current_right = xor(temp_left, f_function_result);}
+        //after you finish 16 rounds, you need to use reverse logic
+        String result = ""+current_right+current_left;
         return result;
     }
 
